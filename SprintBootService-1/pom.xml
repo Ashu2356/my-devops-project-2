@@ -4,27 +4,33 @@
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <!-- ✅ Use Spring Boot parent to manage versions -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.7.4</version>
+    <relativePath/> <!-- lookup parent from repository -->
+  </parent>
+
   <groupId>com.example</groupId>
   <artifactId>springboot-app</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
 
   <name>springboot-app</name>
-  <description>Sample Spring Boot application for CI/CD</description>
+  <description>Demo Spring Boot App</description>
 
   <properties>
     <java.version>11</java.version>
-    <spring.boot.version>2.7.4</spring.boot.version>
   </properties>
 
   <dependencies>
-    <!-- Spring Boot Starter Web -->
+    <!-- ✅ No need to specify version -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
 
-    <!-- Testing -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
@@ -34,16 +40,6 @@
 
   <build>
     <plugins>
-      <!-- Spring Boot Maven Plugin -->
-      <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <version>${spring.boot.version}</version>
-        <configuration>
-          <mainClass>com.example.demo.SpringbootAppApplication</mainClass>
-        </configuration>
-      </plugin>
-
       <!-- Maven Compiler Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -52,6 +48,15 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
+        </configuration>
+      </plugin>
+
+      <!-- Spring Boot Plugin -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <mainClass>com.example.demo.SpringbootAppApplication</mainClass>
         </configuration>
       </plugin>
     </plugins>
