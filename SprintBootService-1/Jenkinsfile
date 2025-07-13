@@ -1,1 +1,56 @@
 
+pipeline {
+  agent any
+
+  environment {
+    DOCKER_IMAGE = "parit29/webapp:${BUILD_NUMBER}"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git url: 'https://github.com/Ashu2356/SprintBootService-1.git', branch: 'main'
+      }
+    }
+
+    stage('Build JAR') {
+      steps {
+        sh 'mvn clean package'
+      }
+    }
+
+    stage('Build & Push Docker Image') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            docker build -t $DOCKER_IMAGE .
+            docker push $DOCKER_IMAGE
+          '''
+        }
+      }
+    }
+
+    stage('Deploy to Kubernetes') {
+      steps {
+        withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+          sh '''
+            export KUBECONFIG=$KUBECONFIG_FILE
+            sed -i "s|image: .*|image: $DOCKER_IMAGE|g" deploy.yaml
+            kubectl apply -f deploy.yaml
+            kubectl apply -f service.yaml
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo '✅ App successfully deployed to Kubernetes!'
+    }
+    failure {
+      echo '❌ Build or deployment failed.'
+    }
+  }
+}
