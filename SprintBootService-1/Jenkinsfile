@@ -6,6 +6,7 @@ pipeline {
   }
 
   stages {
+
     stage('Checkout') {
       steps {
         git url: 'https://github.com/Ashu2356/my-devops-project-2.git'
@@ -14,19 +15,22 @@ pipeline {
 
     stage('Build WAR') {
       steps {
-        // ⛳ No `dir(...)` because pom.xml is at the root of the repo
-        sh 'mvn clean install'
+        dir('SprintBootService-1') {
+          sh 'mvn clean install'
+        }
       }
     }
 
     stage('Build & Push Docker Image to GHCR') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'ghcr-creds', usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_TOKEN')]) {
-          sh '''
-            echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
-            docker build -t $IMAGE_NAME SprintBootService-1
-            docker push $IMAGE_NAME
-          '''
+          dir('SprintBootService-1') {
+            sh '''
+              echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
+              docker build -t $IMAGE_NAME .
+              docker push $IMAGE_NAME
+            '''
+          }
         }
       }
     }
