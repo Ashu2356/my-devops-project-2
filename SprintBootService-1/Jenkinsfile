@@ -14,9 +14,8 @@ pipeline {
 
     stage('Build WAR') {
       steps {
-        dir('SprintBootService-1') {
-          sh 'mvn clean install'
-        }
+        // ⛳ No `dir(...)` because pom.xml is at the root of the repo
+        sh 'mvn clean install'
       }
     }
 
