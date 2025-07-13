@@ -8,37 +8,48 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Ashu2356/my-devops-project-2.git'
+                // Checkout the whole repo at root workspace
+                checkout([$class: 'GitSCM',
+                    branches: [[name: 'main']],
+                    userRemoteConfigs: [[url: 'https://github.com/Ashu2356/my-devops-project-2.git']]
+                ])
             }
         }
 
         stage('Build WAR') {
             steps {
-                sh 'mvn clean install'
+                dir('SprintBootService-1') {
+                    sh 'mvn clean install'
+                }
             }
         }
 
         stage('Build & Push Docker Image to GHCR') {
             environment {
-                GITHUB_TOKEN = credentials('ghcr_token') // Make sure this Jenkins credential exists
+                GITHUB_TOKEN = credentials('ghcr_token')  // Jenkins credential ID for GitHub token
             }
             steps {
-                withCredentials([string(credentialsId: 'ghcr_token', variable: 'GITHUB_TOKEN')]) {
-                    sh '''
-                        echo $GITHUB_TOKEN | docker login ghcr.io -u Ashu2356 --password-stdin
-                        docker build -t $IMAGE_NAME .
-                        docker push $IMAGE_NAME
-                    '''
+                dir('SprintBootService-1') {
+                    withCredentials([string(credentialsId: 'ghcr_token', variable: 'GITHUB_TOKEN')]) {
+                        sh '''
+                            echo $GITHUB_TOKEN | docker login ghcr.io -u Ashu2356 --password-stdin
+                            docker build -t $IMAGE_NAME .
+                            docker push $IMAGE_NAME
+                        '''
+                    }
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                    kubectl apply -f deploy.yaml
-                    kubectl apply -f service.yaml
-                '''
+                // Assuming deploy.yaml and service.yaml are in SprintBootService-1 folder
+                dir('SprintBootService-1') {
+                    sh '''
+                        kubectl apply -f deploy.yaml
+                        kubectl apply -f service.yaml
+                    '''
+                }
             }
         }
     }
