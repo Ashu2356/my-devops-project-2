@@ -8,7 +8,6 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        // Only one checkout
         git url: 'https://github.com/Ashu2356/my-devops-project-2.git'
       }
     }
@@ -36,7 +35,8 @@ pipeline {
     stage('Deploy to Kubernetes') {
       steps {
         withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
-          sh 'kubectl apply -f SprintBootService-1/k8s/deployment.yaml --kubeconfig=$KUBECONFIG'
+          sh 'kubectl apply -f SprintBootService-1/deploy.yaml --kubeconfig=$KUBECONFIG'
+          sh 'kubectl apply -f SprintBootService-1/service.yaml --kubeconfig=$KUBECONFIG'
         }
       }
     }
