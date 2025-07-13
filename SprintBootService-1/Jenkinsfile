@@ -8,6 +8,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
+        // Only one checkout
         git url: 'https://github.com/Ashu2356/my-devops-project-2.git'
       }
     }
