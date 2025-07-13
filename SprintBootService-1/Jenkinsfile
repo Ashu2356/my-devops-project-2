@@ -8,7 +8,9 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Ashu2356/my-devops-project-2.git'
+                dir('SprintBootService-1') {
+                    git branch: 'main', url: 'https://github.com/Ashu2356/my-devops-project-2.git'
+                }
             }
         }
 
