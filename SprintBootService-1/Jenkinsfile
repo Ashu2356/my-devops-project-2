@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = "ghcr.io/ashu2356/webapp:${BUILD_NUMBER}"  // 🔁 Change username/repo if needed
+    IMAGE_NAME = "ghcr.io/ashu2356/webapp:${BUILD_NUMBER}"
   }
 
   stages {
@@ -22,9 +22,13 @@ pipeline {
 
     stage('Build & Push Docker Image to GHCR') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'ghcr-creds', usernameVariable: 'GHCR_USER', passwordVariable: 'GHCR_PASS')]) {
+        withCredentials([
+          usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS'),
+          usernamePassword(credentialsId: 'ghcr-creds', usernameVariable: 'GHCR_USER', passwordVariable: 'GHCR_PASS')
+        ]) {
           dir('SprintBootService-1') {
             sh '''
+              echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
               echo "$GHCR_PASS" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
               docker build -t $IMAGE_NAME .
               docker push $IMAGE_NAME
@@ -52,7 +56,7 @@ pipeline {
 
   post {
     success {
-      echo '✅ App successfully deployed to Kubernetes via GHCR image!'
+      echo '✅ Application successfully deployed to Kubernetes!'
     }
     failure {
       echo '❌ Build or deployment failed.'
