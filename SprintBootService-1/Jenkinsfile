@@ -8,11 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Checkout the whole repo at root workspace
-                checkout([$class: 'GitSCM',
-                    branches: [[name: 'main']],
-                    userRemoteConfigs: [[url: 'https://github.com/Ashu2356/my-devops-project-2.git']]
-                ])
+                git branch: 'main', url: 'https://github.com/Ashu2356/my-devops-project-2.git'
             }
         }
 
@@ -26,7 +22,7 @@ pipeline {
 
         stage('Build & Push Docker Image to GHCR') {
             environment {
-                GITHUB_TOKEN = credentials('ghcr_token')  // Jenkins credential ID for GitHub token
+                GITHUB_TOKEN = credentials('ghcr_token')
             }
             steps {
                 dir('SprintBootService-1') {
@@ -43,7 +39,6 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                // Assuming deploy.yaml and service.yaml are in SprintBootService-1 folder
                 dir('SprintBootService-1') {
                     sh '''
                         kubectl apply -f deploy.yaml
