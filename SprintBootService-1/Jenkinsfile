@@ -8,8 +8,7 @@ pipeline {
   stages {
     stage('Checkout Spring Boot Project') {
       steps {
-        git url: 'https://github.com/Ashu2356/springboot-app', branch: 'main'
-      }
+      git url: 'https://github.com/Ashu2356/SprintBootService-1.git', branch: 'main'      }
     }
 
     stage('Build JAR') {
