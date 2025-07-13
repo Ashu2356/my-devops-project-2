@@ -2,16 +2,13 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_IMAGE = "parit29/webapp:${BUILD_NUMBER}"
+    DOCKER_IMAGE = "parit29/webapp:${BUILD_NUMBER}"  // Replace with your actual DockerHub username/repo
   }
 
   stages {
-    stage('Checkout Spring Boot Project') {
+    stage('Checkout Repo') {
       steps {
-        // Clone the app into subfolder
-        dir('SprintBootService-1') {
-          git url: 'https://github.com/Ashu2356/SprintBootService-1.git', branch: 'main'
-        }
+        git url: 'https://github.com/Ashu2356/my-devops-project-2.git', branch: 'main'
       }
     }
 
