@@ -14,17 +14,18 @@ pipeline {
 
     stage('Build WAR') {
       steps {
-        // Assumes pom.xml is at root level
-        sh 'mvn clean install'
+        dir('SprintBootService-1') {
+          sh 'mvn clean install'
+        }
       }
     }
 
     stage('Build & Push Docker Image to GHCR') {
       steps {
-        withCredentials([string(credentialsId: 'ghcr-token', variable: 'GITHUB_TOKEN')]) {
+        withCredentials([usernamePassword(credentialsId: 'ghcr-creds', usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_TOKEN')]) {
           sh '''
-            echo $GITHUB_TOKEN | docker login ghcr.io -u Ashu2356 --password-stdin
-            docker build -t $IMAGE_NAME .
+            echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
+            docker build -t $IMAGE_NAME SprintBootService-1
             docker push $IMAGE_NAME
           '''
         }
@@ -34,7 +35,7 @@ pipeline {
     stage('Deploy to Kubernetes') {
       steps {
         withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
-          sh 'kubectl apply -f k8s/deployment.yaml --kubeconfig=$KUBECONFIG'
+          sh 'kubectl apply -f SprintBootService-1/k8s/deployment.yaml --kubeconfig=$KUBECONFIG'
         }
       }
     }
