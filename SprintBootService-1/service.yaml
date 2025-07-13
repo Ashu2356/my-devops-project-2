@@ -1,1 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sprintbootservice1-service
+spec:
+  selector:
+    app: sprintbootservice1
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: NodePort
 
