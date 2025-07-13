@@ -2,13 +2,13 @@ pipeline {
   agent any
 
   environment {
-    IMAGE = "ghcr.io/ashu2356/webapp:18"
+    IMAGE_NAME = "ghcr.io/ashu2356/webapp:18"
   }
 
   stages {
     stage('Checkout') {
       steps {
-        git 'https://github.com/Ashu2356/my-devops-project-2.git'
+        git url: 'https://github.com/Ashu2356/my-devops-project-2.git'
       }
     }
 
@@ -22,18 +22,12 @@ pipeline {
 
     stage('Build & Push Docker Image to GHCR') {
       steps {
-        withCredentials([
-          usernamePassword(credentialsId: 'dockerhub-user', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS'),
-          usernamePassword(credentialsId: 'ghcr', usernameVariable: 'GHCR_USER', passwordVariable: 'GHCR_PASS')
-        ]) {
-          dir('SprintBootService-1') {
-            sh '''
-              echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
-              echo $GHCR_PASS | docker login ghcr.io -u $GHCR_USER --password-stdin
-              docker build -t $IMAGE .
-              docker push $IMAGE
-            '''
-          }
+        withCredentials([string(credentialsId: 'ghcr-token', variable: 'GITHUB_TOKEN')]) {
+          sh '''
+            echo $GITHUB_TOKEN | docker login ghcr.io -u Ashu2356 --password-stdin
+            docker build -t $IMAGE_NAME .
+            docker push $IMAGE_NAME
+          '''
         }
       }
     }
@@ -41,12 +35,7 @@ pipeline {
     stage('Deploy to Kubernetes') {
       steps {
         withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
-          dir('k8s') {
-            sh '''
-              kubectl apply -f deployment.yaml
-              kubectl apply -f service.yaml
-            '''
-          }
+          sh 'kubectl apply -f k8s/deployment.yaml --kubeconfig=$KUBECONFIG'
         }
       }
     }
@@ -57,7 +46,7 @@ pipeline {
       echo "❌ Build or deployment failed."
     }
     success {
-      echo "✅ Application successfully deployed to Kubernetes!"
+      echo "✅ Deployment successful!"
     }
   }
 }
