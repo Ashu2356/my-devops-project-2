@@ -1,62 +1,63 @@
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        DOCKERHUB_USER = credentials('dockerhub-user')
-        DOCKERHUB_PASS = credentials('dockerhub-pass')
-        GHCR_USER = credentials('ghcr-user')
-        GHCR_PASS = credentials('ghcr-pass')
+  environment {
+    IMAGE = "ghcr.io/ashu2356/webapp:18"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git 'https://github.com/Ashu2356/my-devops-project-2.git'
+      }
     }
 
-    stages {
-        stage('Git Clone') {
-            steps {
-                git 'https://github.com/Ashu2356/my-devops-project-2.git'
-            }
+    stage('Build WAR') {
+      steps {
+        dir('SprintBootService-1') {
+          sh 'mvn clean install'
         }
-
-        stage('Maven Build') {
-            steps {
-                dir('SprintBootService-1') {
-                    sh 'mvn clean package'
-                }
-            }
-        }
-
-        stage('Build & Push Docker Image to GHCR') {
-            steps {
-                withCredentials([
-                    usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS'),
-                    usernamePassword(credentialsId: 'ghcr', usernameVariable: 'GHCR_USER', passwordVariable: 'GHCR_PASS')
-                ]) {
-                    dir('SprintBootService-1') {
-                        sh '''
-                        echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
-                        echo $GHCR_PASS | docker login ghcr.io -u $GHCR_USER --password-stdin
-                        docker build -t ghcr.io/ashu2356/webapp:18 .
-                        docker push ghcr.io/ashu2356/webapp:18
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            environment {
-                KUBECONFIG = '/home/ec2-user/.kube/config'  // ✅ Pointing to your actual kubeconfig path
-            }
-            steps {
-                sh 'kubectl apply -f SprintBootService-1/k8s/deployment.yaml'
-            }
-        }
+      }
     }
 
-    post {
-        failure {
-            echo '❌ Build or deployment failed.'
+    stage('Build & Push Docker Image to GHCR') {
+      steps {
+        withCredentials([
+          usernamePassword(credentialsId: 'dockerhub-user', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS'),
+          usernamePassword(credentialsId: 'ghcr', usernameVariable: 'GHCR_USER', passwordVariable: 'GHCR_PASS')
+        ]) {
+          dir('SprintBootService-1') {
+            sh '''
+              echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
+              echo $GHCR_PASS | docker login ghcr.io -u $GHCR_USER --password-stdin
+              docker build -t $IMAGE .
+              docker push $IMAGE
+            '''
+          }
         }
-        success {
-            echo '✅ Build and deployment succeeded.'
-        }
+      }
     }
+
+    stage('Deploy to Kubernetes') {
+      steps {
+        withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
+          dir('k8s') {
+            sh '''
+              kubectl apply -f deployment.yaml
+              kubectl apply -f service.yaml
+            '''
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    failure {
+      echo "❌ Build or deployment failed."
+    }
+    success {
+      echo "✅ Application successfully deployed to Kubernetes!"
+    }
+  }
 }
