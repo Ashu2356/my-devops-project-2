@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_IMAGE = "parit29/webapp:${BUILD_NUMBER}"
+    IMAGE_NAME = "ghcr.io/ashu2356/webapp:${BUILD_NUMBER}"  // 🔁 Change username/repo if needed
   }
 
   stages {
@@ -20,14 +20,14 @@ pipeline {
       }
     }
 
-    stage('Build & Push Docker Image') {
+    stage('Build & Push Docker Image to GHCR') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+        withCredentials([usernamePassword(credentialsId: 'ghcr-creds', usernameVariable: 'GHCR_USER', passwordVariable: 'GHCR_PASS')]) {
           dir('SprintBootService-1') {
             sh '''
-              echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-              docker build -t $DOCKER_IMAGE .
-              docker push $DOCKER_IMAGE
+              echo "$GHCR_PASS" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+              docker build -t $IMAGE_NAME .
+              docker push $IMAGE_NAME
             '''
           }
         }
@@ -40,7 +40,7 @@ pipeline {
           dir('SprintBootService-1') {
             sh '''
               export KUBECONFIG=$KUBECONFIG_FILE
-              sed -i "s|image: .*|image: $DOCKER_IMAGE|g" deploy.yaml
+              sed -i "s|image: .*|image: $IMAGE_NAME|g" deploy.yaml
               kubectl apply -f deploy.yaml
               kubectl apply -f service.yaml
             '''
@@ -52,7 +52,7 @@ pipeline {
 
   post {
     success {
-      echo '✅ App successfully deployed to Kubernetes!'
+      echo '✅ App successfully deployed to Kubernetes via GHCR image!'
     }
     failure {
       echo '❌ Build or deployment failed.'
